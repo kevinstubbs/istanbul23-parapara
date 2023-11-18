@@ -9,7 +9,6 @@ import {
 } from "@rainbow-me/rainbowkit";
 import { argentWallet, trustWallet } from "@rainbow-me/rainbowkit/wallets";
 import { createConfig, configureChains, WagmiConfig } from "wagmi";
-import { Chain } from "wagmi/chains";
 import { publicProvider } from "wagmi/providers/public";
 import { Navbar, NavbarRight } from "../components/Navbar";
 import { Footer } from "../components/Footer";
