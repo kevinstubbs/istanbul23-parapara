@@ -5,8 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ByteHasher} from "./helpers/ByteHasher.sol";
 import {IWorldID} from "./interfaces/IWorldID.sol";
 
-// TODO: Rename me
-contract Contract is ERC20 {
+contract ParaController is ERC20 {
     using ByteHasher for bytes;
 
     struct Enrollment {

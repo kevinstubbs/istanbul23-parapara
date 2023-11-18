@@ -7,9 +7,8 @@ import { privateKeyToAccount } from "viem/accounts";
 import { http, createWalletClient, createPublicClient } from "viem";
 dotenv.config();
 
-// make sure to fix the path if you've renamed your contract!
-const Contract = JSON.parse(
-  fs.readFileSync("./out/Contract.sol/Contract.json", "utf-8")
+const ParaController = JSON.parse(
+  fs.readFileSync("./out/ParaController.sol/ParaController.json", "utf-8")
 );
 
 let validConfig = true;
@@ -55,19 +54,19 @@ async function main() {
   // if you need any extra constructor parameters, add them to this array in order
   const inputs = [await ask("App ID: "), await ask("Action: ")];
 
-  const spinner = ora(`Deploying your contract...`).start();
+  const spinner = ora(`Deploying your contract (ParaController)...`).start();
 
   const hash = await wallet.deployContract({
-    abi: Contract.abi,
+    abi: ParaController.abi,
     chain: optimismGoerli,
     args: [worldIDAddress, ...inputs],
-    bytecode: Contract.bytecode.object,
+    bytecode: ParaController.bytecode.object,
   });
 
   spinner.text = `Waiting for deploy transaction (tx: ${hash})`;
   const tx = await client.waitForTransactionReceipt({ hash });
 
-  spinner.succeed(`Deployed your contract to ${tx.contractAddress}`);
+  spinner.succeed(`Deployed your contract (ParaController) to ${tx.contractAddress}`);
 }
 
 main(...process.argv.splice(2)).then(() => process.exit(0));
