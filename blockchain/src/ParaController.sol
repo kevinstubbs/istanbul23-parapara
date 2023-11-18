@@ -75,9 +75,9 @@ contract ParaController {
 
     /// @dev Whether a nullifier hash has been used already. Used to guarantee an action is only performed once by a single person
     mapping(uint256 => address) internal nullifierHashes;
-    mapping(address => Enrollment) internal enrollmentMap;
+    mapping(address => Enrollment) public enrollmentMap;
 
-    mapping(bytes32 => ReliefFund) internal reliefFundMap;
+    mapping(bytes32 => ReliefFund) public reliefFundMap;
     mapping(address => bytes32[]) internal controlledReliefFunds;
     mapping(bytes32 => mapping(address => TrancheClaim[]))
         internal trancheClaims;
@@ -287,6 +287,9 @@ contract ParaController {
 
         return hydratedReliefFunds;
     }
+
+    // TODO: Get balance of a fund.
+    // TODO: Get how much has been already claimed from a fund.
 
     event NewEnrollment(address enrollee);
     event NewReliefFund(bytes32 kekId);
