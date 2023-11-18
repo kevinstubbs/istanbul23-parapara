@@ -1,0 +1,12 @@
+{
+	"dependencies": {
+		"dotenv": "^16.0.0",
+		"ora": "^6.1.0",
+		"viem": "^0.3.44"
+	},
+	"type": "module",
+	"devDependencies": {
+		"prettier": "^2.8.8",
+		"prettier-plugin-solidity": "^1.1"
+	}
+}
