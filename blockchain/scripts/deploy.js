@@ -81,7 +81,10 @@ async function main() {
     );
 
   // if you need any extra constructor parameters, add them to this array in order
-  const inputs = [await ask("App ID: "), await ask("Action: ")];
+  const inputs = [
+    process.env.WLD_APP_ID ?? (await ask("App ID: ")),
+    process.env.WLD_ACTION_ID ?? (await ask("Action: ")),
+  ];
 
   const spinner = ora(`Deploying your contract (ParaController)...`).start();
 

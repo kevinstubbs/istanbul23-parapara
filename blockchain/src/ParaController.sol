@@ -9,6 +9,11 @@ import {IWorldID} from "./interfaces/IWorldID.sol";
 contract ParaController {
     using ByteHasher for bytes;
 
+    struct SignalData {
+        address wallet;
+        string alpha2country;
+    }
+
     struct Enrollment {
         address wallet;
         string alpha2country;
@@ -112,38 +117,31 @@ contract ParaController {
     /// @param proof The zero-knowledge proof that demonstrates the claimer is registered with World ID (returned by the JS widget).
     /// @dev Feel free to rename this method however you want! We've used `claim`, `verify` or `execute` in the past.
     function verifyAndEnroll(
-        Enrollment calldata signal,
+        address signal,
         uint256 root,
         uint256 nullifierHash,
         uint256[8] calldata proof
     ) public {
         // First, we make sure this person hasn't done this before
-        if (nullifierHashes[nullifierHash] != address(0))
-            revert InvalidNullifier();
+        // if (nullifierHashes[nullifierHash] != address(0))
+        //     revert InvalidNullifier();
+
+        // (address wallet, string memory alpha2country) = abi.decode(
+        //     bytes(signal),
+        //     (address, string)
+        // );
 
         // We now verify the provided proof is valid and the user is verified by World ID
         worldId.verifyProof(
             root,
             groupId,
-            abi
-                .encodePacked(
-                    signal.wallet,
-                    signal.alpha2country,
-                    signal.isOrbVerified,
-                    signal.isPhoneVerified,
-                    signal.createdAt
-                )
-                .hashToField(),
+            abi.encodePacked(signal).hashToField(),
             nullifierHash,
             externalNullifier,
             proof
         );
 
-        // We now record the user has done this, so they can't do it again (proof of uniqueness)
-        nullifierHashes[nullifierHash] = signal.wallet;
-        enrollmentMap[signal.wallet] = signal;
-
-        emit NewEnrollment(signal.wallet);
+        require(false, "End of function");
     }
 
     function createReliefFund(
