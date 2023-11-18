@@ -5,7 +5,7 @@ import { CredentialType, IDKitWidget, ISuccessResult } from "@worldcoin/idkit";
 import { CountryInfo } from "./CountryInfo";
 import { abi } from "../abis/out/ParaController.sol/ParaController.json";
 
-var iso3311a2 = require("./iso-3166-1-alpha-2");
+var iso3311a2 = require("iso-3166-1-alpha-2");
 const allCountries = iso3311a2.getCountries();
 
 const NotConnected = () => {
@@ -57,7 +57,7 @@ const Connected = () => {
             }
           >
             <option>SELECT A COUNTRY</option>
-            {iso3311a2.map((x: string) => (
+            {allCountries.map((x: string) => (
               <option key={x} value={iso3311a2.getCode(x)}>
                 {x}
               </option>
