@@ -7,3 +7,4 @@ build:; forge build
 update:; forge update
 # Deploy contracts
 deploy:; node --no-warnings scripts/deploy.js
+template:; node --no-warnings scripts/template.js

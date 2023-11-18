@@ -71,14 +71,15 @@ async function main() {
 
   const usdc20Address = "0x2d985715f3fc5ebc643dccd12e99dccf470f52b2";
 
-  const worldIDAddress = await fetch(
-    "https://developer.worldcoin.org/api/v1/contracts"
-  )
-    .then((res) => res.json())
-    .then(
-      // (res) => res.find(({ key }) => key == "staging.semaphore.wld.eth").value
-      (res) => res.find(({ key }) => key == "op-goerli.id.worldcoin.eth").value
-    );
+  const worldIDAddress = "0x515f06B36E6D3b707eAecBdeD18d8B384944c87f";
+  // await fetch(
+  //   "https://developer.worldcoin.org/api/v1/contracts"
+  // )
+  //   .then((res) => res.json())
+  //   .then(
+  //     // (res) => res.find(({ key }) => key == "staging.semaphore.wld.eth").value
+  //     (res) => res.find(({ key }) => key == "op-goerli.id.worldcoin.eth").value
+  //   );
 
   // if you need any extra constructor parameters, add them to this array in order
   const inputs = [
@@ -86,6 +87,7 @@ async function main() {
     process.env.WLD_ACTION_ID ?? (await ask("Action: ")),
   ];
 
+  console.log("allArgs", [worldIDAddress, ...inputs, usdc20Address]);
   const spinner = ora(`Deploying your contract (ParaController)...`).start();
 
   const hash = await wallet.deployContract({
@@ -101,6 +103,39 @@ async function main() {
   spinner.succeed(
     `Deployed your contract (ParaController) to ${tx.contractAddress}`
   );
+
+  await client.waitForTransactionReceipt({
+    hash: await wallet.writeContract({
+      address: tx.contractAddress,
+      abi: ParaController.abi,
+      chain: optimismGoerli,
+      functionName: "createReliefFund",
+      account: privateKeyToAccount(process.env.PRIVATE_KEY),
+      args: ["TR", 25000000000000000000, 50, "Earthquake"],
+    }),
+  });
+
+  await client.waitForTransactionReceipt({
+    hash: await wallet.writeContract({
+      address: tx.contractAddress,
+      abi: ParaController.abi,
+      chain: optimismGoerli,
+      functionName: "createReliefFund",
+      account: privateKeyToAccount(process.env.PRIVATE_KEY),
+      args: ["GE", 25000000000000000000, 100, "Svaneti Funds"],
+    }),
+  });
+
+  await client.waitForTransactionReceipt({
+    hash: await wallet.writeContract({
+      address: tx.contractAddress,
+      abi: ParaController.abi,
+      chain: optimismGoerli,
+      functionName: "createReliefFund",
+      account: privateKeyToAccount(process.env.PRIVATE_KEY),
+      args: ["IT", 25000000000000000000, 200, "Red Cross Taormina"],
+    }),
+  });
 }
 
 main(...process.argv.splice(2)).then(() => process.exit(0));

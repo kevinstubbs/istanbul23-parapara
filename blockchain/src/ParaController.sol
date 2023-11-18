@@ -32,6 +32,7 @@ contract ParaController {
         uint256 fee;
         uint256 numTranchesReleased;
         uint256 createdAt;
+        string name;
     }
 
     struct TrancheClaim {
@@ -126,8 +127,8 @@ contract ParaController {
         // if (nullifierHashes[nullifierHash] != address(0))
         //     revert InvalidNullifier();
 
-        // (address wallet, string memory alpha2country) = abi.decode(
-        //     bytes(signal),
+        // (address wallet, string alpha2country) = abi.decode(
+        //     signal,
         //     (address, string)
         // );
 
@@ -141,19 +142,32 @@ contract ParaController {
             proof
         );
 
+        // We now record the user has done this, so they can't do it again (proof of uniqueness)
+        // nullifierHashes[nullifierHash] = wallet;
+        // enrollmentMap[wallet] = Enrollment({
+        //     wallet: wallet,
+        //     alpha2country: alpha2country,
+        //     isOrbVerified: true,
+        //     isPhoneVerified: true,
+        //     createdAt: block.timestamp
+        // });
+
+        // emit NewEnrollment(wallet);
         require(false, "End of function");
     }
 
     function createReliefFund(
         string calldata alpha2country,
         uint256 trancheAmount,
-        uint256 fee
+        uint256 fee,
+        string calldata name
     ) public {
         bytes32 kekId = keccak256(
             abi.encodePacked(
                 msg.sender,
                 alpha2country,
                 trancheAmount,
+                name,
                 block.timestamp
             )
         );
@@ -166,6 +180,7 @@ contract ParaController {
             isPaused: false,
             isStopped: false,
             fee: fee,
+            name: name,
             numTranchesReleased: 0,
             createdAt: block.timestamp
         });
