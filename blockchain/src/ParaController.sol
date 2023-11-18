@@ -5,7 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ByteHasher} from "./helpers/ByteHasher.sol";
 import {IWorldID} from "./interfaces/IWorldID.sol";
 
-contract ParaController is ERC20 {
+// TODO: Add reentrancy guards.
+contract ParaController {
     using ByteHasher for bytes;
 
     struct Enrollment {
@@ -23,6 +24,7 @@ contract ParaController is ERC20 {
         uint256 trancheAmount;
         bool isPaused;
         bool isStopped;
+        uint256 fee;
         uint256 numTranchesReleased;
         uint256 createdAt;
     }
@@ -59,8 +61,8 @@ contract ParaController is ERC20 {
     /// @notice Thrown when attempting to claim a tranche from a fund where you have already claimed all available tranches
     error AllTranchesAlreadyClaimed();
 
-    /// @notice Thrown when transferFrom fails
-    error TransferFromFailed();
+    /// @notice Thrown when a transfer fails
+    error TransferFailed();
 
     /// @dev The World ID instance that will be used for verifying proofs
     IWorldID internal immutable worldId;
@@ -84,18 +86,24 @@ contract ParaController is ERC20 {
     // this for hackathon time-constraint purposes.
     bytes32[] public allReliefFunds;
 
+    ERC20 public usdc;
+
+    mapping(bytes32 kekId => uint256) private _fundBalances;
+
     /// @param _worldId The WorldID instance that will verify the proofs
     /// @param _appId The World ID app ID
     /// @param _actionId The World ID action ID
     constructor(
         IWorldID _worldId,
         string memory _appId,
-        string memory _actionId
-    ) ERC20("Parapara", "PRP") {
+        string memory _actionId,
+        address _usdc
+    ) {
         worldId = _worldId;
         externalNullifier = abi
             .encodePacked(abi.encodePacked(_appId).hashToField(), _actionId)
             .hashToField();
+        usdc = ERC20(_usdc);
     }
 
     /// @param signal An arbitrary input from the user, usually the user's wallet address (check README for further details)
@@ -140,7 +148,8 @@ contract ParaController is ERC20 {
 
     function createReliefFund(
         string calldata alpha2country,
-        uint256 trancheAmount
+        uint256 trancheAmount,
+        uint256 fee
     ) public {
         bytes32 kekId = keccak256(
             abi.encodePacked(
@@ -158,6 +167,7 @@ contract ParaController is ERC20 {
             trancheAmount: trancheAmount,
             isPaused: false,
             isStopped: false,
+            fee: fee,
             numTranchesReleased: 0,
             createdAt: block.timestamp
         });
@@ -194,6 +204,8 @@ contract ParaController is ERC20 {
         }
 
         reliefFundMap[kekId].isStopped = true;
+
+        // TODO: Release unclaimed funds back to donors proportionally.
     }
 
     function startNextTranche(bytes32 kekId) public {
@@ -213,11 +225,11 @@ contract ParaController is ERC20 {
             revert ReliefFundAlreadyPaused();
         }
 
-        if (!usdc.transferFrom(msg.sender, address(this), amount)) {
-            revert TransferFromFailed();
-        }
+        _fundBalances[kekId] += amount;
 
-        _mint(kekId, amount);
+        if (!usdc.transferFrom(msg.sender, address(this), amount)) {
+            revert TransferFailed();
+        }
     }
 
     function claimTranche(bytes32 kekId) public {
@@ -242,6 +254,12 @@ contract ParaController is ERC20 {
         }
 
         reliefFundMap[kekId].numTranchesReleased++;
+        _fundBalances[kekId] -= reliefFundMap[kekId].trancheAmount;
+
+        // TODO: Apply fund & platform's fees here.
+        if (!usdc.transfer(msg.sender, reliefFundMap[kekId].trancheAmount)) {
+            revert TransferFailed();
+        }
     }
 
     function getAllReliefFunds() public view returns (ReliefFund[] memory) {
