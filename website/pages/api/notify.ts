@@ -1,9 +1,11 @@
-import "dotenv/config";
 import { PushAPI } from "@pushprotocol/restapi";
 import { ethers } from "ethers";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+export default async function handler(
+  req: NextApiRequest, 
+  res: NextApiResponse
+) {
   const provider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
   const signer = new ethers.Wallet(
     process.env.PRIVATE_KEY_ORGANIZER!,
@@ -27,4 +29,4 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     console.error(e);
     res.status(500).send("Something went wrong.");
   }
-};
+}

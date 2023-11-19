@@ -8,4 +8,5 @@ update:; forge update
 # Deploy contracts
 deploy:; node --no-warnings scripts/deploy.js
 template:; node --no-warnings scripts/template.js
-fund:; node --no-warnings scripts/fund.js
+refill:; node --no-warnings scripts/refill.js
+create_fund:; node --no-warnings scripts/create_fund.js
