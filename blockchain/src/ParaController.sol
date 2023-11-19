@@ -263,10 +263,7 @@ contract ParaController {
             revert ReliefFundAlreadyStopped();
         } else if (enrollmentMap[msg.sender].wallet == address(0)) {
             revert NotEnrolled();
-        }
-        // TODO: This is pretty hacky, have to figure out how to do the targeting in a more scalable/flexible way..
-        // probably with oracles and/or chainlink in some way.
-        else if (
+        } else if (
             keccak256(
                 abi.encodePacked(enrollmentMap[msg.sender].alpha2country)
             ) != keccak256(abi.encodePacked(reliefFundMap[kekId].alpha2country))

@@ -112,9 +112,9 @@ export const ReliefFund = ({ reliefFund, isEnrolled, enrollmentData }: any) => {
         Fee breakdown: {reliefFund.fee.toNumber() / 100}% to organizer. 0.5% to
         platform. {fundsAfterFee}% to human in need.
       </div>
-      <div>Received: {formatEther(reliefFund.totalReceived)}</div>
-      <div>Dispersed: {formatEther(reliefFund.totalDispersed)}</div>
-      <div>Available for dispersal: {formatEther(availableForDispersal)}</div>
+      <div>Received: ${formatEther(reliefFund.totalReceived)}</div>
+      <div>Dispersed: ${formatEther(reliefFund.totalDispersed)}</div>
+      <div>Available for dispersal: ${formatEther(availableForDispersal)}</div>
       {isEligible ? (
         false ? (
           <div>Successfully claimed!</div>

@@ -12,6 +12,8 @@ export const CountryInfo = ({ country }: Props) => {
         className="max-w-6 max-h-6"
         src={`http://purecatamphetamine.github.io/country-flag-icons/3x2/${country}.svg`}
       />
+      <div>HRMI Data</div>
+      <div></div>
     </div>
   );
 };
