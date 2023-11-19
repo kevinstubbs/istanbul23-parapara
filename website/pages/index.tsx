@@ -8,8 +8,6 @@ const Home: NextPage = () => {
     <div className="my-8 mb-32 mx-8">
       <Enrollment />
       <br />
-      <br />
-      <br />
       <FundBrowser />
     </div>
   );

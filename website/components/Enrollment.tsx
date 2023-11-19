@@ -15,6 +15,7 @@ import { abi } from "../abis/out/ParaController.sol/ParaController.json";
 import { abi as erc20ABI } from "../abis/out/ERC20.sol/ERC20.json";
 import { zeroAddress } from "viem";
 import { BigNumber } from "ethers";
+import { Button, Heading, Typography } from "@ensdomains/thorin";
 
 // const unpackedProof = decodeAbiParameters([{ type: 'uint256[8]' }], proof)[0]
 const decode = <T,>(type: string, encodedString: string): T =>
@@ -181,24 +182,26 @@ const Connected = () => {
 
   return (
     <div className="flex flex-col gap-y-2">
-      <h3 className="font-special text-3xl">Your Enrollment</h3>
+      <Heading>Your Enrollment</Heading>
       {isEnrolled || false ? (
         <div className="flex flex-col gap-y-2">
-          <div>Registered Location: {enrollmentData?.alpha2country} </div>
+          <Typography>
+            Registered Location: {enrollmentData?.alpha2country}{" "}
+          </Typography>
           <CountryInfo country={enrollmentData?.alpha2country} />
         </div>
       ) : null}
 
       {isSuccess ? <div>Successfully enrolled!</div> : null}
       {isError || isError2 ? (
-        <div>Enrollment failed. Please try again.</div>
+        <Typography>Enrollment failed. Please try again.</Typography>
       ) : null}
 
       {false ? (
-        <div>Enrollment in progress...</div>
+        <Typography>Enrollment in progress...</Typography>
       ) : !isEnrolled ? (
         <div>
-          <div>Self-attest</div>
+          <Typography>Self-attest</Typography>
           <div>
             <select
               disabled={inProgress}
@@ -215,7 +218,7 @@ const Connected = () => {
           </div>
           {write ? (
             <div>
-              <button onClick={write}>Click to complete Enrollment</button>
+              <Button onClick={write}>Click to complete Enrollment</Button>
             </div>
           ) : (
             <div>
@@ -231,13 +234,14 @@ const Connected = () => {
                 enableTelemetry
               >
                 {({ open }) => (
-                  <button
+                  <Button
                     disabled={countryCode == null || inProgress}
+                    loading={inProgress}
                     onClick={open}
                     className="btn"
                   >
                     Approve enrollment with World ID
-                  </button>
+                  </Button>
                 )}
               </IDKitWidget>
             </div>

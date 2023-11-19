@@ -1,3 +1,5 @@
+import { ScrollBox, Typography } from "@ensdomains/thorin";
+
 var iso3311a2 = require("iso-3166-1-alpha-2");
 const hrmiData = require("@/lib/abbreviatedData.json");
 
@@ -15,9 +17,9 @@ export const CountryInfo = ({ country }: Props) => {
         className="max-w-6 max-h-6"
         src={`http://purecatamphetamine.github.io/country-flag-icons/3x2/${country}.svg`}
       />
-      <div>HRMI Data</div>
+      <div className="mt-2">HRMI Data for {iso3311a2.getCountry(country)}</div>
       {matchedHRMI ? (
-        <div>
+        <Typography className="pl-4 py-2" fontVariant="extraSmall">
           <div>
             Overall quality of life score:{" "}
             {matchedHRMI.LMY_QofL_All_GBScore || "unknown"}
@@ -41,7 +43,7 @@ export const CountryInfo = ({ country }: Props) => {
             Overall work score: {matchedHRMI.LMY_Work_All_GBScore || "unknown"}
           </div>
           <div>Last updated in {matchedHRMI.Year}</div>
-        </div>
+        </Typography>
       ) : (
         <div>Unable to find matching HRMI data on this country</div>
       )}

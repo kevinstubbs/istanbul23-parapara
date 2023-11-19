@@ -1,5 +1,7 @@
 import "../styles/global.css";
 import "@rainbow-me/rainbowkit/styles.css";
+import { ThemeProvider } from "styled-components";
+import { ThorinGlobalStyles, lightTheme } from "@ensdomains/thorin";
 import { optimismGoerli } from "wagmi/chains";
 import type { AppProps } from "next/app";
 import {
@@ -52,14 +54,17 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <WagmiConfig client={wagmiClient}>
       <RainbowKitProvider appInfo={demoAppInfo} chains={chains}>
-        <div>
-          <div className="flex flex-row w-full justify-between">
-            <Navbar />
-            <Component {...pageProps} />
-            <NavbarRight />
+        <ThemeProvider theme={lightTheme}>
+          <ThorinGlobalStyles />
+          <div>
+            <div className="flex flex-row w-full justify-between">
+              <Navbar />
+              <Component {...pageProps} />
+              <NavbarRight />
+            </div>
+            <Footer />
           </div>
-          <Footer />
-        </div>
+        </ThemeProvider>
       </RainbowKitProvider>
     </WagmiConfig>
   );
