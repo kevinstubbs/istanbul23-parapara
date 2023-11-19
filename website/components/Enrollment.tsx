@@ -12,20 +12,23 @@ import { defaultAbiCoder } from "ethers/lib/utils";
 
 import { CountryInfo } from "./CountryInfo";
 import { abi } from "../abis/out/ParaController.sol/ParaController.json";
-import {
-  decodeAbiParameters,
-  encodeAbiParameters,
-  parseAbiParameters,
-  zeroAddress,
-} from "viem";
+import { abi as erc20ABI } from "../abis/out/ERC20.sol/ERC20.json";
+import { zeroAddress } from "viem";
+import { BigNumber } from "ethers";
 
 // const unpackedProof = decodeAbiParameters([{ type: 'uint256[8]' }], proof)[0]
-// const decode = <T,>(type: string, encodedString: string): T =>
-//   decodeAbiParameters([{ type }], encodedString as any)[0] as T;
+const decode = <T,>(type: string, encodedString: string): T =>
+  defaultAbiCoder.decode([type], encodedString)[0];
 
 export const contractConfig = {
-  address: "0x01efa30794b9d70c1abca8def5ea61481f5091a1",
+  // address: "0x5ebeac47601a15400c3bf095a24ef5e3164773fc",
+  address: "0xb0280aad4f858e8d05af13066a2295aec0a873c2",
   abi,
+} as const;
+
+export const erc20ContractConfig = {
+  address: "0x2d985715f3fc5ebc643dccd12e99dccf470f52b2",
+  abi: erc20ABI,
 } as const;
 
 var iso3311a2 = require("iso-3166-1-alpha-2");
@@ -45,9 +48,10 @@ export const useEnrollmentMap = () => {
   const { data: enrollmentData, ...data } = useContractRead<
     any,
     "enrollmentMap",
-    any[]
+    any
   >({
     ...contractConfig,
+    enabled: address !== zeroAddress && address != null && address !== "0x",
     args: [address],
     functionName: "enrollmentMap",
   });
@@ -64,23 +68,104 @@ const Connected = () => {
   const { address } = useAccount();
   const [countryCode, setCountryCode] = useState<string>();
 
-  const { isEnrolled } = useEnrollmentMap();
+  const { isEnrolled, enrollmentData } = useEnrollmentMap();
 
   // const { config: verifyAndEnrollConfig } = usePrepareContractWrite({
   //   ...contractConfig,
   //   functionName: "verifyAndEnroll",
   // });
 
-  const {
-    data,
-    isLoading,
-    isSuccess,
-    isError,
-    write: verifyAndEnroll,
-  } = useContractWrite({
+  // const {
+  //   data,
+  //   isLoading,
+  //   isSuccess,
+  //   isError,
+  //   write: verifyAndEnroll,
+  // } = useContractWrite({
+  //   mode: 'recklesslyUnprepared',
+  //   ...contractConfig,
+  //   functionName: "verifyAndEnroll",
+  //   args:
+  // });
+
+  const [proof, setProof] = useState<ISuccessResult | null>();
+  const { config, isError } = usePrepareContractWrite({
     ...contractConfig,
+    enabled: proof != null && address != null,
     functionName: "verifyAndEnroll",
+    args: [
+      address!,
+      countryCode,
+      proof?.merkle_root
+        ? decode<BigNumber>("uint256", proof?.merkle_root ?? "")
+        : BigNumber.from(0),
+      proof?.nullifier_hash
+        ? decode<BigNumber>("uint256", proof?.nullifier_hash ?? "")
+        : BigNumber.from(0),
+      proof?.proof
+        ? decode<
+            [
+              BigNumber,
+              BigNumber,
+              BigNumber,
+              BigNumber,
+              BigNumber,
+              BigNumber,
+              BigNumber,
+              BigNumber
+            ]
+          >("uint256[8]", proof?.proof ?? "")
+        : [
+            BigNumber.from(0),
+            BigNumber.from(0),
+            BigNumber.from(0),
+            BigNumber.from(0),
+            BigNumber.from(0),
+            BigNumber.from(0),
+            BigNumber.from(0),
+            BigNumber.from(0),
+          ],
+    ],
   });
+  console.log([
+    address!,
+    countryCode,
+    proof?.merkle_root
+      ? decode<BigNumber>("uint256", proof?.merkle_root ?? "")
+      : BigNumber.from(0),
+    proof?.nullifier_hash
+      ? decode<BigNumber>("uint256", proof?.nullifier_hash ?? "")
+      : BigNumber.from(0),
+    proof?.proof
+      ? decode<
+          [
+            BigNumber,
+            BigNumber,
+            BigNumber,
+            BigNumber,
+            BigNumber,
+            BigNumber,
+            BigNumber,
+            BigNumber
+          ]
+        >("uint256[8]", proof?.proof ?? "")
+      : [
+          BigNumber.from(0),
+          BigNumber.from(0),
+          BigNumber.from(0),
+          BigNumber.from(0),
+          BigNumber.from(0),
+          BigNumber.from(0),
+          BigNumber.from(0),
+          BigNumber.from(0),
+        ],
+  ]);
+  const {
+    write,
+    isLoading: inProgress,
+    isSuccess,
+    isError: isError2,
+  } = useContractWrite(config);
 
   // const encodedSignal = useMemo(
   //   () =>
@@ -95,25 +180,28 @@ const Connected = () => {
   // console.log({ countryCode });
 
   return (
-    <div>
-      <h3>Your Enrollment</h3>
-      {isEnrolled || isSuccess ? (
-        <div>
-          <div>Registered Location: SOME_COUNTRY</div>
-          <CountryInfo country={"togo"} />
+    <div className="flex flex-col gap-y-2">
+      <h3 className="font-special text-3xl">Your Enrollment</h3>
+      {isEnrolled || false ? (
+        <div className="flex flex-col gap-y-2">
+          <div>Registered Location: {enrollmentData?.alpha2country} </div>
+          <CountryInfo country={enrollmentData?.alpha2country} />
         </div>
       ) : null}
 
       {isSuccess ? <div>Successfully enrolled!</div> : null}
-      {isError ? <div>Enrollment failed. Please try again.</div> : null}
+      {isError || isError2 ? (
+        <div>Enrollment failed. Please try again.</div>
+      ) : null}
 
-      {isLoading ? (
+      {false ? (
         <div>Enrollment in progress...</div>
       ) : !isEnrolled ? (
         <div>
           <div>Self-attest</div>
           <div>
             <select
+              disabled={inProgress}
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
             >
@@ -125,69 +213,35 @@ const Connected = () => {
               ))}
             </select>
           </div>
-          <div>
-            <IDKitWidget
-              app_id="app_staging_f8c5512ae4a3182d57b85cf0529e0531" // obtained from the Developer Portal
-              action="paraenrollment_v1" // this is your action name from the Developer Portal
-              signal={address} // any arbitrary value the user is committing to, e.g. a vote
-              onSuccess={(proof: ISuccessResult) => {
-                // console.log(
-                //   "IDKIT SUCCESS",
-                //   merkle_root,
-                //   nullifier_hash,
-                //   proof,
-                //   credential_type,
-                //   {
-                //     args: [zeroAddress, merkle_root, nullifier_hash, proof],
-                //   }
-                // );
-
-                console.log([
-                  address,
-                  defaultAbiCoder.decode(["uint256"], proof?.merkle_root)[0]
-                    ._hex,
-                  defaultAbiCoder.decode(["uint256"], proof?.nullifier_hash)[0]
-                    ._hex,
-                  defaultAbiCoder
-                    .decode(["uint256[8]"], proof?.proof)[0]
-                    .map((x: any) => x._hex),
-                  // decode("uint256", proof?.merkle_root),
-                  // decode("uint256", proof?.nullifier_hash),
-                  // decode("uint256[8]", proof?.proof),
-                ]);
-                verifyAndEnroll?.({
-                  args: [
-                    address,
-                    defaultAbiCoder.decode(["uint256"], proof?.merkle_root)[0]
-                      ._hex,
-                    defaultAbiCoder.decode(
-                      ["uint256"],
-                      proof?.nullifier_hash
-                    )[0]._hex,
-                    defaultAbiCoder
-                      .decode(["uint256[8]"], proof?.proof)[0]
-                      .map((x: any) => x._hex),
-                    // decode("uint256", proof?.merkle_root),
-                    // decode("uint256", proof?.nullifier_hash),
-                    // decode("uint256[8]", proof?.proof),
-                  ],
-                });
-              }}
-              // TODO: Accept phone verification, but requires on-cloud verification.
-              credential_types={[CredentialType.Orb /*, CredentialType.Phone*/]} // the credentials you want to accept
-              enableTelemetry
-            >
-              {({ open }) => (
-                <button
-                  disabled={countryCode == null}
-                  onClick={open}
-                  className="btn"
-                >
-                  Enroll with World ID
-                </button>
-              )}
-            </IDKitWidget>
-          </div>
+          {write ? (
+            <div>
+              <button onClick={write}>Click to complete Enrollment</button>
+            </div>
+          ) : (
+            <div>
+              <IDKitWidget
+                app_id="app_staging_f8c5512ae4a3182d57b85cf0529e0531" // obtained from the Developer Portal
+                action="paraenrollment_v1" // this is your action name from the Developer Portal
+                signal={address} // any arbitrary value the user is committing to, e.g. a vote
+                onSuccess={setProof}
+                // TODO: Accept phone verification, but requires on-cloud verification.
+                credential_types={[
+                  CredentialType.Orb /*, CredentialType.Phone*/,
+                ]} // the credentials you want to accept
+                enableTelemetry
+              >
+                {({ open }) => (
+                  <button
+                    disabled={countryCode == null || inProgress}
+                    onClick={open}
+                    className="btn"
+                  >
+                    Approve enrollment with World ID
+                  </button>
+                )}
+              </IDKitWidget>
+            </div>
+          )}
         </div>
       ) : null}
     </div>

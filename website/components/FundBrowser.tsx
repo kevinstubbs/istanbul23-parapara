@@ -1,48 +1,41 @@
-import { useEnrollmentMap } from "./Enrollment";
+import { useContractRead } from "wagmi";
+import { contractConfig, useEnrollmentMap } from "./Enrollment";
 import { ReliefFund } from "./ReliefFund";
+import { useState, useEffect } from "react";
 
 export const FundBrowser = () => {
+  const [hasMounted, setHasMounted] = useState(false);
   const { isEnrolled, enrollmentData } = useEnrollmentMap();
 
-  // const { data: enrollmentData, ...data } = useContractRead<
-  //   any,
-  //   "enrollmentMap",
-  //   any[]
-  // >({
-  //   ...contractConfig,
-  //   args: [address],
-  //   functionName: "getAllReliefFunds",
-  // });
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
-  // TODO: Come from chain data (or cached off-chain later).
+  const { data: allReliefFunds, ...data } = useContractRead<
+    any,
+    "enrollmentMap",
+    any[]
+  >({
+    ...contractConfig,
+    functionName: "getAllReliefFunds",
+    watch: true,
+  });
+
+  if (!hasMounted) return null;
+
   return (
     <div>
       <h2 className="text-3xl">Funds</h2>
       <div className="flex flex-col gap-y-8 mt-8">
-        <ReliefFund
-          reliefFund={{ country: "GE" }}
-          name="Tbilisi fund"
-          isEnrolled={isEnrolled}
-          enrollmentData={enrollmentData}
-        />
-        <ReliefFund
-          reliefFund={{ country: "CN" }}
-          name="For Uighyrs"
-          isEnrolled={isEnrolled}
-          enrollmentData={enrollmentData}
-        />
-        <ReliefFund
-          reliefFund={{ country: "TR" }}
-          name="Refugees"
-          isEnrolled={isEnrolled}
-          enrollmentData={enrollmentData}
-        />
-        <ReliefFund
-          reliefFund={{ country: "TR" }}
-          name="Earthquake"
-          isEnrolled={isEnrolled}
-          enrollmentData={enrollmentData}
-        />
+        {allReliefFunds?.map((x, i) => (
+          <ReliefFund
+            key={i}
+            reliefFund={x}
+            name={x.name}
+            isEnrolled={isEnrolled}
+            enrollmentData={enrollmentData}
+          />
+        ))}
       </div>
     </div>
   );

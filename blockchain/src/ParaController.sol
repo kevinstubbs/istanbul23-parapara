@@ -33,6 +33,8 @@ contract ParaController {
         uint256 numTranchesReleased;
         uint256 createdAt;
         string name;
+        uint256 totalReceived;
+        uint256 totalDispersed;
     }
 
     struct TrancheClaim {
@@ -119,15 +121,17 @@ contract ParaController {
     /// @dev Feel free to rename this method however you want! We've used `claim`, `verify` or `execute` in the past.
     function verifyAndEnroll(
         address signal,
+        string memory alpha2country,
         uint256 root,
         uint256 nullifierHash,
         uint256[8] calldata proof
     ) public {
         // First, we make sure this person hasn't done this before
-        // if (nullifierHashes[nullifierHash] != address(0))
-        //     revert InvalidNullifier();
+        if (nullifierHashes[nullifierHash] != address(0))
+            require(false, "InvalidNullifier");
 
-        // (address wallet, string alpha2country) = abi.decode(
+        // Would be nicer, but time constrained to get it working after all issues faced.
+        // (address wallet, string memory alpha2country) = abi.decode(
         //     signal,
         //     (address, string)
         // );
@@ -143,17 +147,16 @@ contract ParaController {
         );
 
         // We now record the user has done this, so they can't do it again (proof of uniqueness)
-        // nullifierHashes[nullifierHash] = wallet;
-        // enrollmentMap[wallet] = Enrollment({
-        //     wallet: wallet,
-        //     alpha2country: alpha2country,
-        //     isOrbVerified: true,
-        //     isPhoneVerified: true,
-        //     createdAt: block.timestamp
-        // });
+        nullifierHashes[nullifierHash] = signal;
+        enrollmentMap[signal] = Enrollment({
+            wallet: signal,
+            alpha2country: alpha2country,
+            isOrbVerified: true,
+            isPhoneVerified: true,
+            createdAt: block.timestamp
+        });
 
-        // emit NewEnrollment(wallet);
-        require(false, "End of function");
+        emit NewEnrollment(signal, alpha2country);
     }
 
     function createReliefFund(
@@ -182,11 +185,15 @@ contract ParaController {
             fee: fee,
             name: name,
             numTranchesReleased: 0,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            totalReceived: 0,
+            totalDispersed: 0
         });
 
         reliefFundMap[kekId] = newReliefFund;
+        allReliefFunds.push(kekId);
         controlledReliefFunds[msg.sender].push(kekId);
+        emit NewReliefFund(kekId, name, alpha2country);
     }
 
     function pauseReliefFund(bytes32 kekId) public {
@@ -197,9 +204,10 @@ contract ParaController {
         }
 
         reliefFundMap[kekId].isPaused = true;
+        emit ReliefFundPaused(kekId);
     }
 
-    function resumeeliefFund(bytes32 kekId) public {
+    function resumeReliefFund(bytes32 kekId) public {
         if (reliefFundMap[kekId].organizer != msg.sender) {
             revert UnauthorizedReliefFundAccess();
         } else if (reliefFundMap[kekId].isStopped) {
@@ -207,6 +215,7 @@ contract ParaController {
         }
 
         reliefFundMap[kekId].isPaused = false;
+        emit ReliefFundResumed(kekId);
     }
 
     function stopReliefFund(bytes32 kekId) public {
@@ -217,6 +226,7 @@ contract ParaController {
         }
 
         reliefFundMap[kekId].isStopped = true;
+        emit ReliefFundStopped(kekId);
 
         // TODO: Release unclaimed funds back to donors proportionally.
     }
@@ -239,10 +249,13 @@ contract ParaController {
         }
 
         _fundBalances[kekId] += amount;
+        reliefFundMap[kekId].totalReceived += amount;
 
         if (!usdc.transferFrom(msg.sender, address(this), amount)) {
             revert TransferFailed();
         }
+
+        emit NewDonation(kekId, amount, msg.sender);
     }
 
     function claimTranche(bytes32 kekId) public {
@@ -260,13 +273,22 @@ contract ParaController {
         ) {
             revert InelgibleForReliefFund();
         } else if (
-            trancheClaims[kekId][msg.sender].length >=
+            trancheClaims[kekId][msg.sender].length >
             reliefFundMap[kekId].numTranchesReleased
         ) {
             revert AllTranchesAlreadyClaimed();
         }
 
-        reliefFundMap[kekId].numTranchesReleased++;
+        trancheClaims[kekId][msg.sender].push(
+            TrancheClaim({
+                reliefFundKekId: kekId,
+                trancheIndex: trancheClaims[kekId][msg.sender].length,
+                claimer: msg.sender,
+                claimedAt: block.timestamp
+            })
+        );
+        reliefFundMap[kekId].totalDispersed += reliefFundMap[kekId]
+            .trancheAmount;
         _fundBalances[kekId] -= reliefFundMap[kekId].trancheAmount;
 
         // TODO: Apply fund & platform's fees here.
@@ -304,11 +326,12 @@ contract ParaController {
     // TODO: Get balance of a fund.
     // TODO: Get how much has been already claimed from a fund.
 
-    event NewEnrollment(address enrollee);
-    event NewReliefFund(bytes32 kekId);
+    event NewEnrollment(address enrollee, string alpha2country);
+    event NewReliefFund(bytes32 kekId, string name, string alpha2country);
     event ReliefFundPaused(bytes32 kekId);
     event ReliefFundResumed(bytes32 kekId);
     event ReliefFundStopped(bytes32 kekId);
+    event NewDonation(bytes32 kekId, uint256 amount, address donator);
     event NextTrancheStarted(bytes32 kekId, uint256 trancheIndex);
     event TrancheClaimed(bytes32 kekId, uint256 trancheIndex, address claimer);
 }
