@@ -101,7 +101,7 @@ export const ReliefFund = ({ reliefFund, isEnrolled, enrollmentData }: any) => {
 
   return (
     <div className="px-8 py-4 border-yellow-200/20 border-2 bg-slate-100">
-      <h3 className="font-semibold">Fund name</h3>
+      <h3 className="font-semibold">{reliefFund.name}</h3>
       <div>Organized by: {reliefFund.organizer}</div>
       <div>
         Targeting parameters: {iso3311a2.getCountry(reliefFund.alpha2country)} (
